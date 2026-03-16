@@ -1,6 +1,11 @@
 # Clash Verge CLI 🖥️
 
-Enhanced command-line interface for Clash Verge VPN client on macOS.
+Enhanced command-line interface for Clash Verge VPN client on macOS and Windows.
+
+## Platforms
+
+- **macOS**: `clash_verge_cli.py`
+- **Windows**: `clash_verge_cli_windows.py`
 
 ## Overview
 
@@ -52,7 +57,26 @@ A comprehensive CLI tool to manage Clash Verge VPN client programmatically. Cont
 
 ## Installation
 
-### Prerequisites
+### Windows
+
+```powershell
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Run directly
+python clash_verge_cli_windows.py --help
+```
+
+**First Run**: On first run, the Windows version will auto-detect your Clash Verge installation. If not found, it will prompt you to enter the config path manually.
+
+Default Windows paths:
+```
+%APPDATA%\clash-verge-rev\
+%LOCALAPPDATA%\clash-verge-rev\
+C:\Program Files\Clash Verge\
+```
+
+### macOS
 
 ```bash
 # Install Python dependencies
