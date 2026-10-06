@@ -1,11 +1,15 @@
 # Clash Verge CLI 🖥️
 
-Enhanced command-line interface for Clash Verge VPN client on macOS and Windows.
+[![CI](https://github.com/Kerry1020/clash-verge-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/Kerry1020/clash-verge-cli/actions/workflows/ci.yml)
+
+Enhanced command-line interface for Clash Verge VPN client on macOS, Linux and Windows.
 
 ## Platforms
 
-- **macOS**: `clash_verge_cli.py`
-- **Windows**: `clash_verge_cli_windows.py`
+One code base for all platforms – the OS is detected automatically.
+
+- **macOS / Linux / Windows**: `clash-verge` command (after `pip install .`)
+- Legacy launchers still work: `clash_verge_cli.py` and `clash_verge_cli_windows.py`
 
 ## Overview
 
@@ -57,50 +61,52 @@ A comprehensive CLI tool to manage Clash Verge VPN client programmatically. Cont
 
 ## Installation
 
-### Windows
-
-```powershell
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Run directly
-python clash_verge_cli_windows.py --help
-```
-
-**First Run**: On first run, the Windows version will auto-detect your Clash Verge installation. If not found, it will prompt you to enter the config path manually.
-
-Default Windows paths:
-```
-%APPDATA%\clash-verge-rev\
-%LOCALAPPDATA%\clash-verge-rev\
-C:\Program Files\Clash Verge\
-```
-
-### macOS
-
-```bash
-# Install Python dependencies
-pip install -r requirements.txt
-```
-
 **Requirements:**
 - Python 3.8+
 - click >= 8.0.0
 - pyyaml >= 6.0
 - requests >= 2.28.0
 
-### Install as CLI
+### Install as CLI (recommended, all platforms)
 
 ```bash
-# Make executable
-chmod +x clash_verge_cli.py
+git clone https://github.com/Kerry1020/clash-verge-cli.git
+cd clash-verge-cli
+pip install .            # or: pipx install .
 
-# Option 1: Run directly
+clash-verge --help
+python -m clash_verge_cli --help   # equivalent
+```
+
+### Run without installing
+
+```bash
+pip install -r requirements.txt
+
+# macOS / Linux
 ./clash_verge_cli.py --help
 
-# Option 2: Add to PATH
+# Windows
+python clash_verge_cli_windows.py --help
+```
+
+Symlinks keep working too:
+
+```bash
 sudo ln -s $(pwd)/clash_verge_cli.py /usr/local/bin/clash-verge
-clash-verge --help
+```
+
+### Windows
+
+**First Run**: the CLI auto-detects your Clash Verge installation. If it is not found and you are in an interactive terminal, it will prompt you to enter the config path manually. You can also pass `--config-dir` or set `CLASH_VERGE_DIR`.
+
+Searched Windows paths:
+```
+%APPDATA%\io.github.clash-verge-rev.clash-verge-rev\
+%APPDATA%\clash-verge-rev\
+%LOCALAPPDATA%\io.github.clash-verge-rev.clash-verge-rev\
+%LOCALAPPDATA%\clash-verge-rev\
+C:\Program Files\Clash Verge\
 ```
 
 ## Usage
@@ -109,17 +115,29 @@ clash-verge --help
 
 ```bash
 # Show status
-python clash_verge_cli.py status
+clash-verge status
 
 # List profiles
-python clash_verge_cli.py profiles
+clash-verge profiles
 
 # Activate profile
-python clash_verge_cli.py activate "my-profile"
+clash-verge activate "my-profile"
 
-# Test proxy latency
-python clash_verge_cli.py test "GLOBAL"
+# Test proxy latency (names with spaces / emoji / CJK are fine)
+clash-verge test "🚀 节点选择"
 ```
+
+### Global Options
+
+Global options go **before** the command, e.g. `clash-verge --timeout 10 test GLOBAL`.
+
+| Option | Env variable | Description |
+|--------|--------------|-------------|
+| `--config-dir PATH` | `CLASH_VERGE_DIR` | Clash Verge config directory (auto-detected) |
+| `--controller ADDR` | `CLASH_API_URL` | External controller, e.g. `127.0.0.1:9097` (default: `external-controller` from `clash-verge.yaml`) |
+| `--secret TEXT` | `CLASH_API_SECRET` | Controller secret (default: `secret` from `clash-verge.yaml`) |
+| `--timeout SEC` | | Network timeout, default 5s |
+| `-V, --version` | | Show version |
 
 ### Command Reference
 
@@ -134,10 +152,12 @@ python clash_verge_cli.py test "GLOBAL"
 | `test <group>` | Test latency for group |
 | `select <group> <proxy>` | Select proxy |
 | `sysproxy` | Show system proxy status |
-| `sysproxy_set on/off/toggle` | Control system proxy |
+| `sysproxy-set on/off/toggle` | Control system proxy (`sysproxy_set` also works) |
 | `tun on/off/toggle` | Control TUN mode |
 | `ports` | Show port configuration |
-| `port_set <type> <port>` | Set port |
+| `port-set <type> <port>` | Set port (`port_set` also works) |
+| `dns` | Show DNS configuration |
+| `rules` | Show routing rules |
 | `traffic` | Show traffic stats |
 | `backup` | Create backup |
 | `backups` | List backups |
@@ -147,40 +167,59 @@ python clash_verge_cli.py test "GLOBAL"
 | `guardian` | Auto-heal mode |
 | `health` | Quick health check |
 | `restart` | Restart Clash Verge |
-| `open_dir` | Open config folder |
+| `open-dir` / `open-logs` | Open config / logs folder |
 | `config` | Show Clash config |
 | `vergecfg` | Show Verge config |
+| `webui` | Show Web UI list |
+| `core` | Show Clash core |
+| `path` | Show detected config directory |
+| `set <key> <value>` | Set a `verge.yaml` key (experimental) |
+| `refresh` | Touch `profiles.yaml` to trigger a reload |
+
+> `test`, `select` and `health` talk to the running Clash core through its external controller (REST API), so Clash Verge must be running. The secret is read from `clash-verge.yaml` and sent as `Authorization: Bearer <secret>`.
+>
+> `sysproxy-set`, `tun`, `port-set`, `activate` and `set` edit Clash Verge's config files; changes are picked up when Clash Verge reloads (use `restart` if needed).
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Error (not found, controller unreachable, health check failed, ...) – message on stderr |
+| `2` | Invalid usage / arguments |
 
 ### JSON Output
 
-All commands support `--json` flag for programmatic use:
+All listing commands support `--json` flag for programmatic use:
 
 ```bash
-python clash_verge_cli.py status --json
-python clash_verge_cli.py proxies --json
-python clash_verge_cli.py traffic --json
+clash-verge status --json
+clash-verge proxies --json
+clash-verge traffic --json
 ```
 
 ### Guardian Mode
 
-Auto-monitor and heal when API fails:
+Auto-monitor and heal when API fails. Requires the external `minimax_guardian.py` script, placed next to the CLI, in the current directory, or pointed to by `CLASH_VERGE_GUARDIAN`:
 
 ```bash
 # Run once
-python clash_verge_cli.py guardian --once
+clash-verge guardian --once
 
 # Run continuously (default 120s interval)
-python clash_verge_cli.py guardian
+clash-verge guardian
 
 # Custom interval and latency threshold
-python clash_verge_cli.py guardian --interval 60 --max-latency 2000
+clash-verge guardian --interval 60 --max-latency 2000
 ```
 
 ## Configuration
 
 Default config directory:
 ```
-~/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/
+macOS:   ~/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/
+Linux:   ~/.local/share/io.github.clash-verge-rev.clash-verge-rev/
+Windows: %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\
 ```
 
 Key files:
@@ -217,9 +256,32 @@ clash-verge backup
 clash-verge guardian --interval 300
 ```
 
+## Development
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+
+pytest          # tests (HTTP is mocked, your real config is never touched)
+ruff check .    # lint
+```
+
+Project layout:
+
+```
+src/clash_verge_cli/
+  commands.py   # click commands + entry point
+  api.py        # mihomo external-controller client
+  store.py      # profiles.yaml / verge.yaml / backups / logs
+  platforms.py  # macOS / Linux / Windows paths and helpers
+  output.py     # JSON / text output helpers
+tests/
+```
+
 ## License
 
-MIT License
+GPL-3.0 – see [LICENSE](LICENSE).
 
 ## Author
 

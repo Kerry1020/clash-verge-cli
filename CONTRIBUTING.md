@@ -6,29 +6,31 @@ Thanks for your interest in contributing!
 
 ```bash
 # Clone the repository
-git clone https://github.com/lingion/clash-verge-cli.git
+git clone https://github.com/Kerry1020/clash-verge-cli.git
 cd clash-verge-cli
 
 # Create virtual environment (recommended)
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Install in development mode
-pip install -e .
+# Install in development mode with test/lint tools
+pip install -e ".[dev]"
 ```
 
 ## Running Tests
 
 ```bash
-# Test the CLI
-python clash_verge_cli.py --help
+pytest            # unit + CLI tests, HTTP is mocked
+ruff check .      # lint
 
-# Run specific command
-python clash_verge_cli.py status
+# Try the CLI
+clash-verge --help
+clash-verge status
 ```
+
+Please add tests for new commands or bug fixes. Tests must not touch the real
+Clash Verge config (the `isolate_home` fixture in `tests/conftest.py` takes care
+of that) and must not make real network requests.
 
 ## Code Style
 
@@ -54,4 +56,4 @@ Feel free to submit issues for:
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be licensed under the GPL-3.0 License.
